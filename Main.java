@@ -8,7 +8,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -17,9 +16,6 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.io.*;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.File;
 import java.io.IOException;
 
 
@@ -29,6 +25,7 @@ public class Main {
     static ArrayList<StockData> stocksData=new ArrayList<>();
     static ArrayList<String> symbols;
     static String done="done"; //ezzel lehet megvaltoztatni, hogy milyen kulcsszot ker az utolso reszveny utan
+    static String filePath="C:\\Users\\t_borsa\\Documents\\Automation\\Stocks writing to CSV\\Resources\\data.xlsx";
 
     public static void main(String[] args) throws IOException {
 
@@ -93,25 +90,43 @@ public class Main {
         Workbook data = new XSSFWorkbook();
         Sheet sheet = data.createSheet();
 
-        for(int i=0;i< stocksData.size();i++){
-            Row row = sheet.createRow(i);
-
+            Row row = sheet.createRow(0);
             Cell cell = row.createCell(0);
+            cell.setCellValue("Szimbólum");
+            cell = row.createCell(1);
+            cell.setCellValue("Név");
+            cell = row.createCell(2);
+            cell.setCellValue("Pillanatnyi érték");
+            cell = row.createCell(3);
+            cell.setCellValue("Mai változás:");
+            cell = row.createCell(4);
+            cell.setCellValue("Előző napi kereskedési volumen");
+            cell = row.createCell(5);
+            cell.setCellValue("Tíznapos átlagos kereskedési volumen");
+            cell = row.createCell(6);
+            cell.setCellValue("Ötvennapos átlagárfolyam");
+
+
+        for(int i=0;i< stocksData.size();i++){
+            row = sheet.createRow(i+1);
+
+            cell = row.createCell(0);
             cell.setCellValue(stocksData.get(i).symbol);
             cell = row.createCell(1);
             cell.setCellValue(stocksData.get(i).name);
             cell = row.createCell(2);
-            cell.setCellValue(stocksData.get(i).changePercent);
+            cell.setCellValue(stocksData.get(i).priceNow);
             cell = row.createCell(3);
-            cell.setCellValue(stocksData.get(i).volumePreviousDay);
+            cell.setCellValue(stocksData.get(i).changePercent);
             cell = row.createCell(4);
-            cell.setCellValue(stocksData.get(i).volumeTenDays);
+            cell.setCellValue(stocksData.get(i).volumePreviousDay);
             cell = row.createCell(5);
+            cell.setCellValue(stocksData.get(i).volumeTenDays);
+            cell = row.createCell(6);
             cell.setCellValue(stocksData.get(i).fiftyDayAvg);
-
         }
 
-        try (FileOutputStream outputStream = new FileOutputStream("C:\\Users\\t_borsa\\Documents\\Automation\\Stocks writing to CSV\\Resources\\data.xlsx")) {
+        try (FileOutputStream outputStream = new FileOutputStream(filePath)) {
             data.write(outputStream);
         }
 
