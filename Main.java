@@ -1,5 +1,10 @@
 package com.company;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -12,6 +17,11 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.io.*;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.File;
+import java.io.IOException;
+
 
 public class Main {
 
@@ -20,21 +30,13 @@ public class Main {
     static ArrayList<String> symbols;
     static String done="done"; //ezzel lehet megvaltoztatni, hogy milyen kulcsszot ker az utolso reszveny utan
 
-    public static void main(String[] args)  {
+    public static void main(String[] args) throws IOException {
 
         System.out.println("Írd be a részvény jelét, majd ENTER, hogy rákeress. Írd be, hogy \"" +done+"\", miután megadtad az utolsót");
 
         symbols=enterSymbols();
         preConnection(symbols);
-
-        for(int i=0;i< stocksData.size();i++){
-            System.out.println("\nNév:"+stocksData.get(i).name);
-            System.out.println("Jel:"+stocksData.get(i).symbol);
-            System.out.println("Pillanatnyi érték:"+stocksData.get(i).priceNow+" USD");
-            System.out.println("Mai változás:"+stocksData.get(i).changePercent+" %");
-            System.out.println("Ötvennapos átlagárfolyam:"+stocksData.get(i).fiftyDayAvg+" USD");
-            System.out.println("Tíznapos kereskedési volumen:"+stocksData.get(i).volumeTenDays+" USD");
-        }
+        dataToExcel(stocksData);
 
     }
 
@@ -55,15 +57,21 @@ public class Main {
         return constructSymbols;
     }
 
-    public static void connection(String link){
+    public static void connection(String link) {
+
+        //https://stackoverflow.com/questions/14024625/how-to-get-httpclient-returning-status-code-and-response-body
 
         HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(link)).build();
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(HttpResponse::body)
-                .thenApply(Main::parsing)
-                .join();    //ez zarja le a sendAsync-ot
-        count++;
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(link))
+                .build();
+
+       client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .thenApply(HttpResponse::body)
+                    .thenApply(Main::parsing)
+                    .join();    //ez zarja le a sendAsync-ot
+            count++;
+
 
     }
 
@@ -80,20 +88,33 @@ public class Main {
 
     }
 
-    public static String searchCsvLine(String searchString) throws IOException {
-        String resultRow = null;
-        BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\t_borsa\\Documents\\Automation\\NASDAQ-stocks.csv"));
-        String line;
-        while ( (line = br.readLine()) != null ) {
-            String[] values = line.split(",");
-            if(values[0].equals(searchString)) {
-                resultRow = line;
-                break;
-            }
+    public static void dataToExcel(ArrayList<StockData> stocksData) throws IOException {
+
+        Workbook data = new XSSFWorkbook();
+        Sheet sheet = data.createSheet();
+
+        for(int i=0;i< stocksData.size();i++){
+            Row row = sheet.createRow(i);
+
+            Cell cell = row.createCell(0);
+            cell.setCellValue(stocksData.get(i).symbol);
+            cell = row.createCell(1);
+            cell.setCellValue(stocksData.get(i).name);
+            cell = row.createCell(2);
+            cell.setCellValue(stocksData.get(i).changePercent);
+            cell = row.createCell(3);
+            cell.setCellValue(stocksData.get(i).volumePreviousDay);
+            cell = row.createCell(4);
+            cell.setCellValue(stocksData.get(i).volumeTenDays);
+            cell = row.createCell(5);
+            cell.setCellValue(stocksData.get(i).fiftyDayAvg);
+
         }
-        br.close();
-        System.out.println(resultRow);
-        return resultRow;
+
+        try (FileOutputStream outputStream = new FileOutputStream("C:\\Users\\t_borsa\\Documents\\Automation\\Stocks writing to CSV\\Resources\\data.xlsx")) {
+            data.write(outputStream);
+        }
+
     }
 
     public static class StockData {
@@ -140,6 +161,7 @@ public class Main {
                 changePercent=dataField.getDouble("regularMarketChangePercent");
                 fiftyDayAvg=dataField.getDouble("fiftyDayAverage");
                 volumeTenDays=dataField.getDouble("averageDailyVolume10Day");
+                volumePreviousDay=dataField.getDouble("regularMarketVolume");
             }
         }
 
@@ -150,7 +172,8 @@ public class Main {
         currentStock.setChangePercent(changePercent);
         currentStock.setFiftyDayAvg(fiftyDayAvg);
         currentStock.setVolumeTenDays(volumeTenDays);
-        
+        currentStock.setVolumePreviousDay(volumePreviousDay);
+
         stocksData.add(currentStock);
 
         return null;
