@@ -5,15 +5,14 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.io.*;
 
 import java.io.IOException;
@@ -24,12 +23,9 @@ public class Main {
     static int count=0;
     static ArrayList<StockData> stocksData=new ArrayList<>();
     static ArrayList<String> symbols;
-    static String done="done"; //ezzel lehet megvaltoztatni, hogy milyen kulcsszot ker az utolso reszveny utan
     static String filePath="C:\\Users\\t_borsa\\Documents\\Automation\\Stocks writing to CSV\\Resources\\data.xlsx";
 
     public static void main(String[] args) throws IOException {
-
-        System.out.println("Írd be a részvény jelét, majd ENTER, hogy rákeress. Írd be, hogy \"" +done+"\", miután megadtad az utolsót");
 
         symbols=enterSymbols();
         preConnection(symbols);
@@ -41,34 +37,146 @@ public class Main {
 
         String symbol;
         int i=0;
-        Scanner in = new Scanner(System.in);
         ArrayList<String> constructSymbols=new ArrayList<>();
+        constructSymbols.add("AAPL");
+        constructSymbols.add("MSFT");
+        constructSymbols.add("AMZN");
+        constructSymbols.add("GOOG");
+        constructSymbols.add("GOOGL");
+        constructSymbols.add("FB");
+        constructSymbols.add("TSLA");
+        constructSymbols.add("BABA");
+        constructSymbols.add("TSM");
+        constructSymbols.add("V");
+        constructSymbols.add("JNJ");
+        constructSymbols.add("JPM");
+        constructSymbols.add("WMT");
+        constructSymbols.add("NVDA");
+        constructSymbols.add("DIS");
+        constructSymbols.add("MA");
+        constructSymbols.add("PYPL");
+        constructSymbols.add("UNH");
+        constructSymbols.add("ALTR");
+        constructSymbols.add("LPRO");
+        constructSymbols.add("JCOM");
+        constructSymbols.add("ACIW");
+        constructSymbols.add("CR");
+        constructSymbols.add("SAGE");
+        constructSymbols.add("FLO");
+        constructSymbols.add("CRNC");
+        constructSymbols.add("FTDR");
+        constructSymbols.add("UGP");
+        constructSymbols.add("DOYU");
+        constructSymbols.add("MSM");
+        constructSymbols.add("ARNA");
+        constructSymbols.add("M");
+        constructSymbols.add("VLY");
+        constructSymbols.add("GOCO");
+        constructSymbols.add("EVR");
+        constructSymbols.add("STAG");
+        constructSymbols.add("AUY");
+        constructSymbols.add("ACHC");
+        constructSymbols.add("JOBS");
+        constructSymbols.add("CLH");
+        constructSymbols.add("WEN");
+        constructSymbols.add("ENSG");
+        constructSymbols.add("RAMP");
+        constructSymbols.add("CFX");
+        constructSymbols.add("CW");
+        constructSymbols.add("RYN");
+        constructSymbols.add("TRUP");
+        constructSymbols.add("LOPE");
+        constructSymbols.add("VMI");
+        constructSymbols.add("HASI");
+        constructSymbols.add("SRC");
+        constructSymbols.add("GTES");
+        constructSymbols.add("RLI");
+        constructSymbols.add("ALLO");
+        constructSymbols.add("PRSP");
+        constructSymbols.add("RXT");
+        constructSymbols.add("XRX");
+        constructSymbols.add("FTI");
+        constructSymbols.add("ROLL");
+        constructSymbols.add("AY");
+        constructSymbols.add("RPD");
+        constructSymbols.add("WKHS");
+        constructSymbols.add("NEOG");
+        constructSymbols.add("EQT");
+        constructSymbols.add("TENB");
+        constructSymbols.add("NOMD");
+        constructSymbols.add("SWCH");
+        constructSymbols.add("LPX");
+        constructSymbols.add("CBPO");
+        constructSymbols.add("LPSN");
+        constructSymbols.add("YALA");
+        constructSymbols.add("QLYS");
+        constructSymbols.add("SNX");
+        constructSymbols.add("UBSI");
+        constructSymbols.add("HLI");
+        constructSymbols.add("AMKR");
+        constructSymbols.add("JAMF");
+        constructSymbols.add("DAVA");
+        constructSymbols.add("HLNE");
+        constructSymbols.add("WBS");
+        constructSymbols.add("TREE");
+        constructSymbols.add("PD");
+        constructSymbols.add("NTLA");
+        constructSymbols.add("WDFC");
+        constructSymbols.add("GPK");
+        constructSymbols.add("GOOS");
+        constructSymbols.add("SLG");
+        constructSymbols.add("MTSI");
+        constructSymbols.add("KBR");
+        constructSymbols.add("SHLX");
+        constructSymbols.add("REGI");
+        constructSymbols.add("NCR");
 
-        while(true) {
-            System.out.print("Kérem a részvény jelét nagybetűkkel:");
-            symbol = in.nextLine();
-            if(symbol.equals(done))break;
-            constructSymbols.add(symbol);
-            i++;
-        }
         return constructSymbols;
     }
 
     public static void connection(String link) {
 
-        //https://stackoverflow.com/questions/14024625/how-to-get-httpclient-returning-status-code-and-response-body
+        String line;
+        StringBuffer responseContent = new StringBuffer();
+        HttpURLConnection conn = null;
 
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(link))
-                .build();
+        try {
 
-       client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                    .thenApply(HttpResponse::body)
-                    .thenApply(Main::parsing)
-                    .join();    //ez zarja le a sendAsync-ot
-            count++;
+            URL url = new URL(link);
+            conn = (HttpURLConnection) url.openConnection();
 
+            //Request setup
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
+
+            int status = conn.getResponseCode();
+            //System.out.println(status);
+            BufferedReader reader;
+            if (status !=200) {
+                reader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+                while ((line = reader.readLine()) != null) {
+                    responseContent.append(line);
+                }
+                reader.close();
+            }
+            else {
+                reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                while ((line = reader.readLine()) != null) {
+                    responseContent.append(line);
+                }
+                reader.close();
+                parsing(responseContent.toString());
+            }
+            
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            conn.disconnect();
+        }
+        count++;
 
     }
 
